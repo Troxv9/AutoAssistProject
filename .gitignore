@@ -1,0 +1,51 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+
+# production
+build/
+dist/
+
+# remotion subproject 
+remotion/node_modules/
+remotion/out/
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# env files
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# testing
+coverage/
+
+# turbo / cache
+.turbo/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE (local editor settings)
+.idea/
+*.swp
+*.swo

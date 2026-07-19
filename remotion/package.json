@@ -1,0 +1,26 @@
+{
+  "name": "auto-assist-launch-video",
+  "version": "1.0.0",
+  "description": "Premium product launch video for Auto Assist, built with Remotion.",
+  "private": true,
+  "scripts": {
+    "dev": "remotion studio",
+    "studio": "remotion studio",
+    "render": "remotion render AutoAssistLaunch out/auto-assist.mp4",
+    "still": "remotion still AutoAssistLaunch out/still.png",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.263",
+    "@remotion/google-fonts": "4.0.263",
+    "@remotion/transitions": "4.0.263",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.263"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "typescript": "5.6.3"
+  }
+}

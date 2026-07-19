@@ -1,0 +1,13 @@
+<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .outer-chevron { fill: #0A0A0A; }
+    .horizon-line { fill: #FAFAFA; }
+    @media (prefers-color-scheme: dark) {
+      .outer-chevron { fill: #FAFAFA; }
+      .horizon-line { fill: #171717; }
+    }
+  </style>
+  <path class="outer-chevron" d="M16 4L4 26H9L16 11.5L23 26H28L16 4Z" />
+  <path d="M16 10L9 23H13L16 17L19 23H23L16 10Z" fill="#DC2626" />
+  <rect class="horizon-line" x="3" y="19" width="26" height="1.5" transform="rotate(-5 16 19.75)" />
+</svg>

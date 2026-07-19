@@ -2,16 +2,6 @@ import { wafFetchText } from "@/lib/waf-fetch"
 import { firecrawlScrapeHtml } from "@/lib/firecrawl"
 import type { LocalListing, LocalMarketEstimate, Vehicle } from "@/lib/vehicles"
 
-/**
- * autopapa.ge local-market data source.
- *
- * autopapa exposes SEO search URLs (`/en/search/{brand}/{model}`) that render
- * matching listings server-side as HTML (no Cloudflare JS challenge), so we can
- * fetch and parse them directly for real Georgian prices — unlike MyAuto, whose
- * API is Cloudflare-gated. Structured filters are passed via `s[...]` query
- * params (year range etc.). Every field below was verified against live markup.
- */
-
 const AUTOPAPA_ORIGIN = "https://autopapa.ge"
 
 const BROWSER_HEADERS = {
@@ -74,7 +64,7 @@ export function parseAutopapaCards(html: string, exchangeRate: number): Autopapa
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim()
-    // Strip the phone number so it doesn't bleed into the mileage capture.
+   
     param = param.replace(/tel\.?\s*\+\d+/i, " ")
 
     const year = Number((param.match(/(\d{4})\s*year/i) || [])[1]) || null
@@ -97,12 +87,12 @@ function matchesTarget(card: AutopapaCard, make: string, modelFirstWord: string)
 async function fetchSearch(path: string): Promise<string | null> {
   const url = `${AUTOPAPA_ORIGIN}${path}`
 
-  // Fast path: direct fetch. Works from residential IPs (local dev).
+  
   const { status, text } = await wafFetchText(url, BROWSER_HEADERS, 14000)
   if (status === 200 && text && text.includes("boxCatalog2")) return text
 
-  // Fallback: autopapa is behind Cloudflare, which blocks datacenter IPs such
-  // as Vercel's. Firecrawl scrapes via proxies that clear Cloudflare.
+  
+  
   const viaFirecrawl = await firecrawlScrapeHtml(url)
   if (viaFirecrawl && viaFirecrawl.includes("boxCatalog2")) return viaFirecrawl
 
@@ -132,7 +122,7 @@ function buildEstimate(
   const confidence: LocalMarketEstimate["confidence"] =
     priced.length >= 5 ? "high" : priced.length >= 2 ? "medium" : "low"
 
-  // Closest-year listings first for display.
+  
   const target = vehicle.year
   const listings: LocalListing[] = priced
     .slice()
@@ -169,12 +159,7 @@ function buildEstimate(
   }
 }
 
-/**
- * Searches autopapa.ge for the local-market equivalent of the given vehicle.
- * Tries the precise brand/model URL with a year window, progressively widening,
- * then a brand-only search filtered by title. Returns null if nothing usable
- * is found (caller should fall back to another source).
- */
+
 const estimateCache = new Map<string, { at: number; estimate: LocalMarketEstimate }>()
 const CACHE_TTL_MS = 30 * 60 * 1000
 
@@ -200,10 +185,10 @@ export async function findAutopapaMarket(
   const windows = [
     { from: vehicle.year - 1, to: vehicle.year + 1 },
     { from: vehicle.year - 2, to: vehicle.year + 2 },
-    null, // no year filter
+    null, 
   ]
 
-  // 1) Precise brand/model URL, progressively widening the year window.
+ 
   for (const win of windows) {
     const params = new URLSearchParams()
     if (win) {
@@ -216,10 +201,10 @@ export async function findAutopapaMarket(
     const cards = parseAutopapaCards(html, exchangeRate).filter((c) => matchesTarget(c, vehicle.make, modelFirstWord))
     const estimate = buildEstimate(cards, vehicle, locale)
     if (estimate && estimate.sampleSize >= 2) return cache(estimate)
-    if (estimate && win === null) return cache(estimate) // accept even a single match at the widest search
+    if (estimate && win === null) return cache(estimate) 
   }
 
-  // 2) Brand-only fallback, filter by model token in the title.
+  
   const brandHtml = await fetchSearch(`/en/search/${brand}`)
   if (brandHtml) {
     const cards = parseAutopapaCards(brandHtml, exchangeRate).filter((c) =>

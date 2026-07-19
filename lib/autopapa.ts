@@ -1,4 +1,5 @@
 import { wafFetchText } from "@/lib/waf-fetch"
+import { firecrawlScrapeHtml } from "@/lib/firecrawl"
 import type { LocalListing, LocalMarketEstimate, Vehicle } from "@/lib/vehicles"
 
 /**
@@ -94,9 +95,18 @@ function matchesTarget(card: AutopapaCard, make: string, modelFirstWord: string)
 }
 
 async function fetchSearch(path: string): Promise<string | null> {
-  const { status, text } = await wafFetchText(`${AUTOPAPA_ORIGIN}${path}`, BROWSER_HEADERS, 14000)
-  if (status !== 200 || !text || !text.includes("boxCatalog2")) return null
-  return text
+  const url = `${AUTOPAPA_ORIGIN}${path}`
+
+  // Fast path: direct fetch. Works from residential IPs (local dev).
+  const { status, text } = await wafFetchText(url, BROWSER_HEADERS, 14000)
+  if (status === 200 && text && text.includes("boxCatalog2")) return text
+
+  // Fallback: autopapa is behind Cloudflare, which blocks datacenter IPs such
+  // as Vercel's. Firecrawl scrapes via proxies that clear Cloudflare.
+  const viaFirecrawl = await firecrawlScrapeHtml(url)
+  if (viaFirecrawl && viaFirecrawl.includes("boxCatalog2")) return viaFirecrawl
+
+  return null
 }
 
 function buildEstimate(

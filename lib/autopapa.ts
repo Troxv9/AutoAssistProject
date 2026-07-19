@@ -2,6 +2,7 @@ import { wafFetchText } from "@/lib/waf-fetch"
 import { firecrawlScrapeHtml } from "@/lib/firecrawl"
 import type { LocalListing, LocalMarketEstimate, Vehicle } from "@/lib/vehicles"
 
+
 const AUTOPAPA_ORIGIN = "https://autopapa.ge"
 
 const BROWSER_HEADERS = {
@@ -39,13 +40,14 @@ function median(sorted: number[]): number {
   return sorted.length % 2 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2)
 }
 
-/** Parses the listing cards out of an autopapa search results page. */
+
 export function parseAutopapaCards(html: string, exchangeRate: number): AutopapaCard[] {
   const chunks = html.split('class="boxCatalog2').slice(1)
   const cards: AutopapaCard[] = []
 
   for (const card of chunks) {
-    const urlM = card.match(/href="(\/[a-z]{2}\/[a-z0-9-]+\/[a-z0-9-]+\/(\d+))"/i)
+ 
+    const urlM = card.match(/href="(?:https?:\/\/[^"/]+)?(\/[a-z]{2}\/[a-z0-9\-/]+?\/(\d+))(?:[?#][^"]*)?"/i)
     if (!urlM) continue
     const url = AUTOPAPA_ORIGIN + urlM[1]
     const id = urlM[2]
@@ -55,7 +57,8 @@ export function parseAutopapaCards(html: string, exchangeRate: number): Autopapa
     if (!title) continue
 
     const priceBlock = (card.match(/class="priceCatalog[^"]*"[^>]*>([\s\S]*?)<\/div>/i) || [])[1] || ""
-    const priceDigits = (priceBlock.replace(/<[^>]+>/g, "").match(/[\d\s]{2,}/) || [""])[0].replace(/\s/g, "")
+   
+    const priceDigits = (priceBlock.replace(/<[^>]+>/g, "").match(/\d[\d\s]*/) || [""])[0].replace(/\s/g, "")
     const priceRaw = priceDigits ? Number(priceDigits) : null
     const isUsd = /\$|dollar/i.test(priceBlock) && !/lari/i.test(priceBlock)
     const priceGel = priceRaw && priceRaw > 100 ? Math.round(isUsd ? priceRaw * exchangeRate : priceRaw) : null
@@ -71,8 +74,9 @@ export function parseAutopapaCards(html: string, exchangeRate: number): Autopapa
     const mileageKm = Number(((param.match(/(\d[\d\s]*)\s*K\.?\s*km/i) || [])[1] || "").replace(/\s/g, "")) || null
     const customsPassed = /not\s*cleared/i.test(param) ? false : /cleared/i.test(param) ? true : null
     const location = (param.match(/\d{4}\s*year,\s*([^,]+?),/i) || [])[1]?.trim() || null
-    const imageRel = (card.match(/src="(\/system\/car\/photos\/[^"]+)"/i) || [])[1] || null
-    const imageUrl = imageRel ? AUTOPAPA_ORIGIN + imageRel : null
+   
+    const imageSrc = (card.match(/src="([^"]*\/system\/car\/photos\/[^"]+)"/i) || [])[1] || null
+    const imageUrl = imageSrc ? (imageSrc.startsWith("http") ? imageSrc : AUTOPAPA_ORIGIN + imageSrc) : null
 
     cards.push({ title, url, id, priceGel, currency: isUsd ? "USD" : "GEL", year, mileageKm, customsPassed, location, imageUrl })
   }
@@ -91,7 +95,6 @@ async function fetchSearch(path: string): Promise<string | null> {
   const { status, text } = await wafFetchText(url, BROWSER_HEADERS, 14000)
   if (status === 200 && text && text.includes("boxCatalog2")) return text
 
-  
   
   const viaFirecrawl = await firecrawlScrapeHtml(url)
   if (viaFirecrawl && viaFirecrawl.includes("boxCatalog2")) return viaFirecrawl
@@ -158,8 +161,9 @@ function buildEstimate(
     query: `${AUTOPAPA_ORIGIN}/en/search/${slugify(vehicle.make)}/${slugify(vehicle.model)}`,
   }
 }
-
-
+ 
+ 
+ 
 const estimateCache = new Map<string, { at: number; estimate: LocalMarketEstimate }>()
 const CACHE_TTL_MS = 30 * 60 * 1000
 
@@ -188,7 +192,7 @@ export async function findAutopapaMarket(
     null, 
   ]
 
- 
+  
   for (const win of windows) {
     const params = new URLSearchParams()
     if (win) {
@@ -204,7 +208,6 @@ export async function findAutopapaMarket(
     if (estimate && win === null) return cache(estimate) 
   }
 
-  
   const brandHtml = await fetchSearch(`/en/search/${brand}`)
   if (brandHtml) {
     const cards = parseAutopapaCards(brandHtml, exchangeRate).filter((c) =>

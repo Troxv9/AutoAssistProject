@@ -66,9 +66,10 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
       if (error.code === "email_not_confirmed") {
         return { error: "დაადასტურეთ ელ. ფოსტა შესვლამდე. შეამოწმეთ ინბოქსი." }
       }
-      return {
-        error: `DEBUG signIn: ${error.status ?? "?"} ${error.code ?? error.name} — ${error.message} [${diag}]`,
+      if (error.code === "invalid_credentials" || error.status === 400) {
+        return { error: "ასეთი მომხმარებელი არ არსებობს ან მონაცემები არასწორია. გთხოვთ, გაიაროთ რეგისტრაცია." }
       }
+      return { error: "შესვლა ვერ მოხერხდა. სცადეთ თავიდან." }
     }
 
     console.error("[signIn] success:", { hasSession: !!data.session, hasUser: !!data.user, env: diag })
